@@ -1,0 +1,308 @@
+<!-- 🔒 ADD THIS INSIDE YOUR EXISTING <script> TAG -->
+
+<script>
+
+// 🚀 SERVER URL
+const HF_API_URL = "https://liyowumd-xiao-wu-md.hf.space";
+
+// 🔒 Anti Spam / Anti Denial Protection
+let lastRequestTime = 0;
+let requestCooldown = 15000; // 15 seconds
+let maxAttempts = 3;
+let attemptCount = 0;
+
+function isRateLimited() {
+    const now = Date.now();
+
+    if (now - lastRequestTime < requestCooldown) {
+        return true;
+    }
+
+    lastRequestTime = now;
+    return false;
+}
+
+var video = document.getElementById('bgVideo');
+var overlay = document.getElementById('modalOverlay');
+var modalBox = document.getElementById('modalBox');
+var diag = document.getElementById('dialogue');
+var progCont = document.getElementById('progCont');
+var progBar = document.getElementById('progBar');
+var percText = document.getElementById('percText');
+var codeBox = document.getElementById('codeBox');
+var bindBtn = document.getElementById('bindBtn');
+var btnLogo = document.getElementById('btnLogo');
+var audioStatus = document.getElementById('audioStatus');
+var muteBtn = document.getElementById('muteBtn');
+var volSlider = document.getElementById('volSlider');
+
+// 🎵 Auto Play
+document.body.addEventListener('click', function () {
+    video.muted = false;
+    video.volume = volSlider.value;
+
+    video.play().then(() => {
+        audioStatus.innerText = "Playing Soul Land Essence 🎵";
+    }).catch(e => console.log(e));
+
+}, { once: true });
+
+function openPairModal() {
+
+    codeBox.style.display = "none";
+
+    bindBtn.style.display = "flex";
+    bindBtn.style.opacity = "1";
+    bindBtn.disabled = false;
+
+    diag.innerText =
+        "ආයුබෝවන් ආත්මීය ස්වාමිනි! ඔබගේ ආත්ම බලය මුදාහැර XIAO WU MD සමඟ සම්බන්ධ වීමට සූදානම් වන්න...";
+
+    overlay.style.display = 'flex';
+
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        modalBox.style.transform = 'scale(1)';
+    }, 10);
+}
+
+function closePairModal() {
+
+    overlay.style.opacity = '0';
+    modalBox.style.transform = 'scale(0.8)';
+
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 400);
+}
+
+async function startSpiritBind() {
+
+    var phone = document.getElementById('phone').value.trim();
+
+    // 🔒 Empty Validation
+    if (phone === "" || phone === "+94") {
+
+        diag.innerText =
+            "\"ස්වාමිනි, කරුණාකර වලංගු දුරකථන අංකයක් ඇතුළත් කරන්න!\"";
+
+        return;
+    }
+
+    // 🔒 Spam Protection
+    if (isRateLimited()) {
+
+        diag.innerText =
+            "\"⏳ කරුණාකර තත්පර 15ක් ඉන්න ස්වාමිනි... Server protection active!\"";
+
+        return;
+    }
+
+    // 🔒 Max Attempt Protection
+    if (attemptCount >= maxAttempts) {
+
+        diag.innerText =
+            "\"🚫 Too many attempts detected! Try again later.\"";
+
+        return;
+    }
+
+    attemptCount++;
+
+    // 📱 Phone Clean
+    var cleanPhone = phone.replace(/[^0-9]/g, '');
+
+    // 🎬 Animation
+    btnLogo.classList.add('spin-animation');
+
+    bindBtn.style.opacity = "0.5";
+    bindBtn.disabled = true;
+
+    progCont.style.display = "block";
+    percText.style.display = "block";
+
+    codeBox.style.display = "none";
+
+    diag.innerText =
+        "ආත්ම ශක්තිය ඒකරාශී කරමින් පවතී... 💫";
+
+    let width = 0;
+
+    let barInterval = setInterval(function () {
+
+        if (width < 90) {
+
+            width += 2;
+
+            progBar.style.width = width + "%";
+            percText.innerText = width + "%";
+
+            if (width == 44) {
+
+                diag.innerText =
+                    "Martial Soul අවදි කරමින්... ආත්මීය ජාලයට සම්බන්ධ වෙමින් පවතී... ⚡";
+            }
+        }
+
+    }, 50);
+
+    try {
+
+        // 🔒 Secure Fetch
+        const response = await fetch(
+            `${HF_API_URL}/pair?code=${cleanPhone}`,
+            {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json"
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Server Offline");
+        }
+
+        const data = await response.json();
+
+        clearInterval(barInterval);
+
+        progBar.style.width = "100%";
+        percText.innerText = "100%";
+
+        btnLogo.classList.remove('spin-animation');
+
+        // ✅ Reset attempts after success
+        attemptCount = 0;
+
+        // ✅ Success
+        if (data.code) {
+
+            document.getElementById('pairCode').innerText =
+                data.code;
+
+            diag.innerText =
+                "\"ආත්මීය සම්බන්ධතාවය සාර්ථකයි! ස්වාමිනි, ඔබගේ කේතය ලබාගන්න! 🐰🌸\"";
+
+            codeBox.style.display = "block";
+
+            bindBtn.style.display = "none";
+
+            progCont.style.display = "none";
+            percText.style.display = "none";
+
+        }
+
+        // ⚠️ Already Connected
+        else if (
+            data.status === "Already connected!" ||
+            data.status === "connected"
+        ) {
+
+            diag.innerText =
+                "\"බොට් දැනටමත් සාර්ථකව වට්ස්ඇප් එකට සම්බන්ධ වෙලා තියෙනවා ස්වාමිනි! 🐰\"";
+
+            resetBindingUI();
+        }
+
+        // ❌ Failed
+        else {
+
+            diag.innerText =
+                "\"කෝඩ් එක ලබාගන්න බැරි වුණා. කරුණාකර ආයෙත් උත්සාහ කරන්න!\"";
+
+            resetBindingUI();
+        }
+
+    } catch (error) {
+
+        clearInterval(barInterval);
+
+        btnLogo.classList.remove('spin-animation');
+
+        diag.innerText =
+            "\"⚠️ Server Offline හෝ Busy! HuggingFace Space එක RUNNING දැයි බලන්න.\"";
+
+        resetBindingUI();
+    }
+}
+
+// 🔄 Reset UI
+function resetBindingUI() {
+
+    bindBtn.style.opacity = "1";
+
+    bindBtn.style.display = "flex";
+
+    bindBtn.disabled = false;
+
+    progCont.style.display = "none";
+
+    percText.style.display = "none";
+}
+
+// 📋 Copy Code
+function copyCode() {
+
+    var text =
+        document.getElementById('pairCode').innerText;
+
+    navigator.clipboard.writeText(text).then(() => {
+
+        diag.innerText =
+            "\"කේතය සාර්ථකව පිටපත් කරගත්තා! 🤝💖\"";
+    });
+}
+
+// 🔊 Mute
+function toggleMute() {
+
+    video.muted = !video.muted;
+
+    if (video.muted) {
+
+        muteBtn.innerText = "Unmute";
+
+        muteBtn.style.background = "#555";
+
+        audioStatus.innerText = "Music Muted 🔇";
+
+    } else {
+
+        muteBtn.innerText = "Mute";
+
+        muteBtn.style.background = "#ff007f";
+
+        audioStatus.innerText =
+            "Playing Soul Land Essence 🎵";
+
+        video.play();
+    }
+}
+
+// 🔊 Volume
+function changeVolume(v) {
+
+    video.volume = v;
+
+    if (v == 0) {
+
+        audioStatus.innerText =
+            "Music Muted 🔇";
+
+    } else {
+
+        video.muted = false;
+
+        muteBtn.innerText = "Mute";
+
+        muteBtn.style.background = "#ff007f";
+
+        audioStatus.innerText =
+            "Volume: " +
+            Math.round(v * 100) +
+            "% 🔊";
+    }
+}
+
+</script>
